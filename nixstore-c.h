@@ -28,6 +28,7 @@ void libnixstorec_free_path_info(CPathInfo* path_info);
 CPathInfo* libnixstorec_query_path_info(const char* path);
 
 char* libnixstorec_query_path_from_hash_part(const char* hashPart);
+char* libnixstorec_query_path_from_nar_hash(const char* narHash);
 
 #ifdef __cplusplus
 };

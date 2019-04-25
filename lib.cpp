@@ -153,3 +153,12 @@ char* libnixstorec_query_path_from_hash_part(const char* hashPart) {
 	}
 }
 
+char* libnixstorec_query_path_from_nar_hash(const char* narHash) {
+	try {
+		auto p = store()->queryPathFromNarHash(narHash);
+		return strdup(p.c_str());
+	} catch (Error & e) {
+		fprintf(stderr, "%s\n", e.what());
+		return NULL;
+	}
+}

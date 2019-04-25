@@ -8,7 +8,7 @@ int main(int argc, char* argv[]) {
 	libnixstorec_init();
 
 	if (argc > 1) {
-		char* path = libnixstorec_query_path_from_hash_part(argv[1]);
+		char* path = libnixstorec_query_path_from_nar_hash(argv[1]);
 		if (path == NULL || path[0] == '\0') {
 			fprintf(stderr, "not a valid hash?\n");
 			return 0;
