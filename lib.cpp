@@ -162,3 +162,7 @@ char* libnixstorec_query_path_from_nar_hash(const char* narHash) {
 		return NULL;
 	}
 }
+
+void libnixstorec_free(void* ptr) {
+	FREEZ(ptr);
+}
