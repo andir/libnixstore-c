@@ -12,7 +12,7 @@ struct nixstorec_instance;
 
 struct nixstorec_instance* nixstorec_new_instance();
 void nixstorec_free_instance(struct nixstorec_instance*);
-int nixstorec_is_valid_path(const char* path);
+int nixstorec_is_valid_path(struct nixstorec_instance*, const char* path);
 
 typedef struct {
   char* path;

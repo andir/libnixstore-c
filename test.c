@@ -14,6 +14,11 @@ int main(int argc, char* argv[]) {
 			fprintf(stderr, "not a valid hash?\n");
 			return 0;
 		}
+
+		if (!nixstorec_is_valid_path(instance, path)) {
+			fprintf(stderr, "the path returned from nix-store isn't valid o.O\n");
+		}
+
 		CPathInfo* path_info = nixstorec_query_path_info(instance, path);
 
 		free(path);
