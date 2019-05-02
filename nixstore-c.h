@@ -8,29 +8,35 @@
 extern "C" {
 #endif
 
-void libnixstorec_init();
-int libnixstorec_is_valid_path(const char* path);
+struct nixstorec_instance;
+
+struct nixstorec_instance* nixstorec_new_instance();
+void nixstorec_free_instance(struct nixstorec_instance*);
+int nixstorec_is_valid_path(const char* path);
 
 typedef struct {
-	char* path;
-	char* deriver;
-	char* narHash;
-	char* references;
-	time_t registrationTime;
-	uint64_t narSize;
-	/* uint64_t id; */
-	int ultimate;
-	char* signatures;
-	char* ca;
+  char* path;
+  char* deriver;
+  char* narHash;
+  char* references;
+  time_t registrationTime;
+  uint64_t narSize;
+  /* uint64_t id; */
+  int ultimate;
+  char* signatures;
+  char* ca;
 } CPathInfo;
 
-void libnixstorec_free_path_info(CPathInfo* path_info);
-CPathInfo* libnixstorec_query_path_info(const char* path);
+void nixstorec_free_path_info(CPathInfo* path_info);
+CPathInfo* nixstorec_query_path_info(struct nixstorec_instance*,
+                                     const char* path);
 
-char* libnixstorec_query_path_from_hash_part(const char* hashPart);
-char* libnixstorec_query_path_from_nar_hash(const char* narHash);
+char* nixstorec_query_path_from_hash_part(struct nixstorec_instance*,
+                                          const char* hashPart);
+char* nixstorec_query_path_from_nar_hash(struct nixstorec_instance*,
+                                         const char* narHash);
 
-void libnixstorec_free(void* ptr);
+void nixstorec_free(void* ptr);
 
 #ifdef __cplusplus
 };

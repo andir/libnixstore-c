@@ -8,7 +8,7 @@ set_target_properties(nixstore-c PROPERTIES PUBLIC_HEADER nixstore-c.h)
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(NIXSTORE REQUIRED nix-store)
 
-target_link_libraries(nixstore-c ${NIXSTORE_LIBRARIES})
+target_link_libraries(nixstore-c ${NIXSTORE_LIBRARIES} -lpthread)
 target_include_directories(nixstore-c PUBLIC ${NIXSTORE_INCLUDE_DIRS})
 target_compile_options(nixstore-c PUBLIC ${NIXSTORE_CFLAGS_OTHER})
 
