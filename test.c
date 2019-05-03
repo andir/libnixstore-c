@@ -9,7 +9,7 @@ int main(int argc, char* argv[]) {
 	struct nixstorec_instance *instance = nixstorec_new_instance();
 
 	if (argc > 1) {
-		char* path = nixstorec_query_path_from_nar_hash(instance, argv[1]);
+		char* path = nixstorec_query_path_from_file_hash(instance, argv[1]);
 		if (path == NULL || path[0] == '\0') {
 			fprintf(stderr, "not a valid hash?\n");
 			return 0;

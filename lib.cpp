@@ -224,7 +224,7 @@ char* nixstorec_query_path_from_hash_part(struct nixstorec_instance* instp,
   }
 }
 
-char* nixstorec_query_path_from_nar_hash(struct nixstorec_instance* instp,
+char* nixstorec_query_path_from_file_hash(struct nixstorec_instance* instp,
                                          const char* narHash) {
   if (!is_valid_instance(instp)) {
     fprintf(stderr, "Not a valid nixstorec instance.");
@@ -232,7 +232,7 @@ char* nixstorec_query_path_from_nar_hash(struct nixstorec_instance* instp,
   }
 
   try {
-    auto p = instp->store->queryPathFromNarHash(narHash);
+    auto p = instp->store->queryPathFromFileHash(narHash);
     return strdup(p.c_str());
   } catch (Error& e) {
     fprintf(stderr, "%s\n", e.what());

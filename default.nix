@@ -3,8 +3,8 @@ let
   nix = nixUnstable.overrideAttrs (_: { src = fetchFromGitHub {
     owner = "andir";
     repo = "nix";
-    rev = "41d103caf96a25c2f5ecc16b18b0d9162fe27c5b";
-    sha256 = "1mkqddizckx511n309wpx7n7hg7yjz6929s7i1r079nsm89jxn28";
+    rev = "3aefaac46e4833b029555242f90d37f0df80f02f";
+    sha256 = "0aq0k4kyjcml5dgbhgzf0iv2wl2psy650w80g1d33pnzzv6gcdsr";
   }; });
 in
 stdenv.mkDerivation {

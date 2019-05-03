@@ -33,7 +33,7 @@ CPathInfo* nixstorec_query_path_info(struct nixstorec_instance*,
 
 char* nixstorec_query_path_from_hash_part(struct nixstorec_instance*,
                                           const char* hashPart);
-char* nixstorec_query_path_from_nar_hash(struct nixstorec_instance*,
+char* nixstorec_query_path_from_file_hash(struct nixstorec_instance*,
                                          const char* narHash);
 
 void nixstorec_free(void* ptr);
