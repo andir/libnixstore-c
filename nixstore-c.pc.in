@@ -7,6 +7,6 @@ Name: @PROJECT_NAME@
 Description: @PROJECT_DESCRIPTION@
 Version: @PROJECT_VERSION@
 
-Requires:
+Requires: nix-store
 Libs: -L${libdir} -lnixstore-c
 Cflags: -I${includedir}
