@@ -13,4 +13,6 @@ stdenv.mkDerivation {
 
   nativeBuildInputs = [ pkgconfig cmake ];
   buildInputs = [ nix boost ];
+
+  passthru = { inherit nix; };
 }
