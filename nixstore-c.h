@@ -38,6 +38,39 @@ char* nixstorec_query_path_from_file_hash(struct nixstorec_instance*,
 
 void nixstorec_free(void* ptr);
 
+typedef struct {
+	// 1 == success, <> 1 => error
+	int success;
+
+	// NULL if success, otherwise optionally contains exception message
+	char* error;
+
+	// NULL if error otherwise the response JSON as character array
+	char* result;
+} EvalResult;
+
+// Frees the given EvalResult
+void nixstorec_free_eval_result(EvalResult*);
+
+// Returns the success field value of the given EvalResult
+int nixstorec_eval_result_get_success(EvalResult*);
+
+// Returns the error string of the given EvalResult
+const char* nixstorec_eval_result_get_error(EvalResult*);
+
+// Returns the response string of the given EvalResult
+const char* nixstorec_eval_result_get_result(EvalResult*);
+
+// Eval the given expression with the given store instance
+// Returns a pointer to the result structure. The caller must free the
+// structure when done with processing.
+EvalResult* nixstorec_eval_cstr(struct nixstorec_instance*, const char* expr);
+
+// Eval the expression in the given file.
+// Returns a pointer to the result structure. The caller must free the
+// structure when done with processing.
+EvalResult* nixstorec_eval_file(struct nixstorec_instance*, const char* path);
+
 #ifdef __cplusplus
 };
 #endif

@@ -4,10 +4,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sstream>
 
 #include <nix/config.h>
 #include <nix/globals.hh>
 #include <nix/store-api.hh>
+#include <nix/value-to-json.hh>
 
 #include <pthread.h>
 
@@ -50,6 +52,8 @@ struct nixstorec_instance* nixstorec_new_instance() {
   static int config_loaded = 0;
 
   pthread_mutex_lock(&config_init_mutex);
+
+  initGC();
 
   if (!config_loaded) {
     // FIXME: mutex
@@ -241,3 +245,138 @@ char* nixstorec_query_path_from_file_hash(struct nixstorec_instance* instp,
 }
 
 void nixstorec_free(void* ptr) { FREEZ(ptr); }
+
+void nixstorec_free_eval_result(EvalResult* r) {
+	if (r == NULL) return;
+
+	FREEZ(r->result);
+	FREEZ(r->error);
+	FREEZ(r);
+}
+
+EvalResult* nixstorec_eval_cstr(struct nixstorec_instance* instp,
+		const char* expr) {
+	if (!is_valid_instance(instp)) {
+		fprintf(stderr, "Not a valid nixstorec instance.");
+		return NULL;
+	}
+
+	if (expr == NULL) {
+		fprintf(stderr, "Not a valid expression.");
+		return NULL;
+	}
+
+	EvalResult* res = mallocz<EvalResult>();
+	if (res == NULL) {
+		fprintf(stderr, "Failed to alloc memory for EvalResult");
+		return NULL;
+	}
+
+	PathSet context;
+	// FIXME: support custom search Paths
+	EvalState state({""}, ref<Store>(instp->store));
+
+	auto v = state.allocValue(); // FIXME: Will this throw on OOM?
+	if (v == NULL) {
+		res->success = 0;
+		res->result = NULL;
+		return res;
+	}
+
+	util::OnScopeExit cleanupAlloc([&v]() {
+		GC_free(v);
+	});
+
+	try {
+		state.eval(state.parseExprFromString(std::string(expr), ""), *v);
+	} catch (Error& e) {
+		res->success = 0;
+		res->result = NULL;
+		res->error = strdup(e.what());
+		return res;
+	}
+
+	std::stringstream ss;
+
+	try {
+		printValueAsJSON(state, true, *v, ss, context);
+	} catch(Error& e) {
+		res->success = 0;
+		res->result = NULL;
+		res->error = strdup(e.what());
+		return res;
+	}
+
+	const std::string s = ss.str();
+	res->result = strdup(s.c_str());
+	res->success = 1;
+
+	return res;
+}
+
+EvalResult* nixstorec_eval_file(struct nixstorec_instance* instp, const char* path) {
+	if (!is_valid_instance(instp)) {
+		fprintf(stderr, "Not a valid nixstorec instance.");
+		return NULL;
+	}
+
+	if (path == NULL) {
+		fprintf(stderr, "Not a valid path.");
+		return NULL;
+	}
+
+	EvalResult* res = mallocz<EvalResult>();
+	if (res == NULL) {
+		fprintf(stderr, "Failed to alloc memory for EvalResult");
+		return NULL;
+	}
+
+	PathSet context;
+	// FIXME: support custom search Paths
+	EvalState state({""}, ref<Store>(instp->store));
+
+	auto v = state.allocValue(); // FIXME: Will this throw on OOM?
+
+	try {
+		state.eval(state.parseExprFromFile(Path(path)), *v);
+	} catch (Error& e) {
+		res->success = 0;
+		res->result = NULL;
+		res->error = strdup(e.what());
+		return res;
+	}
+
+	std::stringstream ss;
+
+	try {
+		printValueAsJSON(state, true, *v, ss, context);
+	} catch(Error& e) {
+		res->success = 0;
+		res->result = NULL;
+		res->error = strdup(e.what());
+		return res;
+	}
+
+	const std::string s = ss.str();
+	res->result = strdup(s.c_str());
+	res->success = 1;
+
+	return res;
+}
+
+const char* nixstorec_eval_result_get_error(EvalResult* r) {
+	if (r == NULL) return NULL;
+	if (r->success) return NULL;
+	return r->error;
+}
+
+const char* nixstorec_eval_result_get_result(EvalResult* r) {
+	if (r == NULL) return NULL;
+	if (!r->success) return NULL;
+	return r->result;
+}
+
+int nixstorec_eval_result_get_success(EvalResult* r) {
+	if (r == NULL) return -1;
+	return r->success;
+}

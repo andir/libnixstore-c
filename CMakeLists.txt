@@ -7,10 +7,11 @@ set_target_properties(nixstore-c PROPERTIES PUBLIC_HEADER nixstore-c.h)
 
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(NIXSTORE REQUIRED nix-store)
+pkg_check_modules(NIXEXPR REQUIRED nix-expr)
 
-target_link_libraries(nixstore-c ${NIXSTORE_LIBRARIES} -lpthread)
-target_include_directories(nixstore-c PUBLIC ${NIXSTORE_INCLUDE_DIRS})
-target_compile_options(nixstore-c PUBLIC ${NIXSTORE_CFLAGS_OTHER})
+target_link_libraries(nixstore-c ${NIXSTORE_LIBRARIES} ${NIXEXPR_LIBRARIES} -lpthread)
+target_include_directories(nixstore-c PUBLIC ${NIXSTORE_INCLUDE_DIRS} ${NIXEXPR_INCLUDE_DIRS})
+target_compile_options(nixstore-c PUBLIC ${NIXSTORE_CFLAGS_OTHER} ${NIXEXPR_CFLAGS_OTHER})
 
 configure_file(nixstore-c.pc.in nixstore-c.pc @ONLY)
 include(GNUInstallDirs)

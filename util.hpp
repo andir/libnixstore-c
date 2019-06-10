@@ -19,4 +19,14 @@ namespace util {
 
 		return ss.str();
 	}
+
+
+	template<typename F>
+	class OnScopeExit {
+		private:
+			F f;
+		public:
+		OnScopeExit(F f) : f(f) {}
+		~OnScopeExit() { f(); }
+	};
 }
