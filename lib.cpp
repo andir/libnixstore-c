@@ -1,10 +1,10 @@
 #include "nixstore-c.h"
 #include "util.hpp"
 
+#include <sstream>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sstream>
 
 #include <nix/config.h>
 #include <nix/globals.hh>
@@ -15,26 +15,28 @@
 
 using namespace nix;
 
-#define FREEZ(P)            \
-  {                         \
-    if (P != NULL) free(P); \
-    P = NULL;               \
+#define FREEZ(P)                                                               \
+  {                                                                            \
+    if (P != NULL)                                                             \
+      free(P);                                                                 \
+    P = NULL;                                                                  \
   }
 
 struct nixstorec_instance {
   std::shared_ptr<Store> store;
 };
 
-template <typename T>
-T* mallocz() {
+template <typename T> T *mallocz() {
   const auto size = sizeof(T);
-  void* p = malloc(size);
-  if (p) memset(p, 0, size);
-  return (T*)p;
+  void *p = malloc(size);
+  if (p)
+    memset(p, 0, size);
+  return (T *)p;
 }
 
-inline int is_valid_instance(struct nixstorec_instance* p) {
-  if (p == NULL || p->store == nullptr) return 0;
+inline int is_valid_instance(struct nixstorec_instance *p) {
+  if (p == NULL || p->store == nullptr)
+    return 0;
   return 1;
 }
 
@@ -47,18 +49,18 @@ void setup_nix() {
     loadConfFile();
     settings.lockCPU = false;
     nix_setup_successful = true;
-  } catch (Error& e) {
+  } catch (Error &e) {
     fprintf(stderr, "%s\n", e.what());
   }
 }
 
-struct nixstorec_instance* nixstorec_new_instance() {
-  (void) pthread_once(&nix_setup, setup_nix);
+struct nixstorec_instance *nixstorec_new_instance() {
+  (void)pthread_once(&nix_setup, setup_nix);
   if (!nix_setup_successful) {
     return NULL;
   }
 
-  struct nixstorec_instance* p = mallocz<struct nixstorec_instance>();
+  struct nixstorec_instance *p = mallocz<struct nixstorec_instance>();
 
   if (p == NULL) {
     return NULL;
@@ -66,7 +68,7 @@ struct nixstorec_instance* nixstorec_new_instance() {
 
   try {
     p->store = openStore();
-  } catch (Error& e) {
+  } catch (Error &e) {
     FREEZ(p);
     return NULL;
   }
@@ -79,15 +81,16 @@ struct nixstorec_instance* nixstorec_new_instance() {
   return p;
 }
 
-void nixstorec_free_instance(struct nixstorec_instance* ptr) {
-  if (ptr == NULL) return;
+void nixstorec_free_instance(struct nixstorec_instance *ptr) {
+  if (ptr == NULL)
+    return;
 
-  ptr->store = nullptr;  // release the shared pointer
+  ptr->store = nullptr; // release the shared pointer
   FREEZ(ptr);
 }
 
-int nixstorec_is_valid_path(struct nixstorec_instance* instp,
-                            const char* path) {
+int nixstorec_is_valid_path(struct nixstorec_instance *instp,
+                            const char *path) {
   if (!is_valid_instance(instp)) {
     fprintf(stderr, "Not a valid nixstorec instance.");
     return 0;
@@ -96,14 +99,15 @@ int nixstorec_is_valid_path(struct nixstorec_instance* instp,
   try {
     auto ret = instp->store->isValidPath(path);
     return ret;
-  } catch (Error& e) {
+  } catch (Error &e) {
     fprintf(stderr, "%s\n", e.what());
     return 0;
   }
 }
 
-void nixstorec_free_path_info(CPathInfo* path_info) {
-  if (path_info == NULL) return;
+void nixstorec_free_path_info(CPathInfo *path_info) {
+  if (path_info == NULL)
+    return;
 
   FREEZ(path_info->path);
   FREEZ(path_info->deriver);
@@ -114,9 +118,9 @@ void nixstorec_free_path_info(CPathInfo* path_info) {
   FREEZ(path_info);
 }
 
-CPathInfo* nixstorec_query_path_info(struct nixstorec_instance* instp,
-                                     const char* path) {
-  CPathInfo* path_info = NULL;
+CPathInfo *nixstorec_query_path_info(struct nixstorec_instance *instp,
+                                     const char *path) {
+  CPathInfo *path_info = NULL;
   if (!is_valid_instance(instp)) {
     fprintf(stderr, "Not a valid nixstorec instance.");
     return NULL;
@@ -124,7 +128,8 @@ CPathInfo* nixstorec_query_path_info(struct nixstorec_instance* instp,
 
   try {
     auto p = instp->store->queryPathInfo(path);
-    if (p->deriver == "") return NULL;
+    if (p->deriver == "")
+      return NULL;
 
     path_info = mallocz<CPathInfo>();
     if (path_info == NULL) {
@@ -191,7 +196,7 @@ CPathInfo* nixstorec_query_path_info(struct nixstorec_instance* instp,
     }
 
     return path_info;
-  } catch (Error& e) {
+  } catch (Error &e) {
     nixstorec_free_path_info(path_info);
     fprintf(stderr, "%s\n", e.what());
     return NULL;
@@ -200,8 +205,8 @@ CPathInfo* nixstorec_query_path_info(struct nixstorec_instance* instp,
   return NULL;
 }
 
-char* nixstorec_query_path_from_hash_part(struct nixstorec_instance* instp,
-                                          const char* hashPart) {
+char *nixstorec_query_path_from_hash_part(struct nixstorec_instance *instp,
+                                          const char *hashPart) {
   if (!is_valid_instance(instp)) {
     fprintf(stderr, "Not a valid nixstorec instance.");
     return NULL;
@@ -210,14 +215,14 @@ char* nixstorec_query_path_from_hash_part(struct nixstorec_instance* instp,
   try {
     auto p = instp->store->queryPathFromHashPart(hashPart);
     return strdup(p.c_str());
-  } catch (Error& e) {
+  } catch (Error &e) {
     fprintf(stderr, "%s\n", e.what());
     return NULL;
   }
 }
 
-char* nixstorec_query_path_from_file_hash(struct nixstorec_instance* instp,
-                                         const char* narHash) {
+char *nixstorec_query_path_from_file_hash(struct nixstorec_instance *instp,
+                                          const char *narHash) {
   if (!is_valid_instance(instp)) {
     fprintf(stderr, "Not a valid nixstorec instance.");
     return 0;
@@ -226,145 +231,150 @@ char* nixstorec_query_path_from_file_hash(struct nixstorec_instance* instp,
   try {
     auto p = instp->store->queryPathFromFileHash(narHash);
     return strdup(p.c_str());
-  } catch (Error& e) {
+  } catch (Error &e) {
     fprintf(stderr, "%s\n", e.what());
     return NULL;
   }
 }
 
-void nixstorec_free(void* ptr) { FREEZ(ptr); }
+void nixstorec_free(void *ptr) { FREEZ(ptr); }
 
-void nixstorec_free_eval_result(EvalResult* r) {
-	if (r == NULL) return;
+void nixstorec_free_eval_result(EvalResult *r) {
+  if (r == NULL)
+    return;
 
-	FREEZ(r->result);
-	FREEZ(r->error);
-	FREEZ(r);
+  FREEZ(r->result);
+  FREEZ(r->error);
+  FREEZ(r);
 }
 
-EvalResult* nixstorec_eval_cstr(struct nixstorec_instance* instp,
-		const char* expr) {
-	if (!is_valid_instance(instp)) {
-		fprintf(stderr, "Not a valid nixstorec instance.");
-		return NULL;
-	}
+EvalResult *nixstorec_eval_cstr(struct nixstorec_instance *instp,
+                                const char *expr) {
+  if (!is_valid_instance(instp)) {
+    fprintf(stderr, "Not a valid nixstorec instance.");
+    return NULL;
+  }
 
-	if (expr == NULL) {
-		fprintf(stderr, "Not a valid expression.");
-		return NULL;
-	}
+  if (expr == NULL) {
+    fprintf(stderr, "Not a valid expression.");
+    return NULL;
+  }
 
-	EvalResult* res = mallocz<EvalResult>();
-	if (res == NULL) {
-		fprintf(stderr, "Failed to alloc memory for EvalResult");
-		return NULL;
-	}
+  EvalResult *res = mallocz<EvalResult>();
+  if (res == NULL) {
+    fprintf(stderr, "Failed to alloc memory for EvalResult");
+    return NULL;
+  }
 
-	PathSet context;
-	// FIXME: support custom search Paths
-	EvalState state({""}, ref<Store>(instp->store));
+  PathSet context;
+  // FIXME: support custom search Paths
+  EvalState state({""}, ref<Store>(instp->store));
 
-	auto v = state.allocValue(); // FIXME: Will this throw on OOM?
-	if (v == NULL) {
-		res->success = 0;
-		res->result = NULL;
-		return res;
-	}
+  auto v = state.allocValue(); // FIXME: Will this throw on OOM?
+  if (v == NULL) {
+    res->success = 0;
+    res->result = NULL;
+    return res;
+  }
 
-	util::OnScopeExit cleanupAlloc([&v]() {
-		GC_free(v);
-	});
+  util::OnScopeExit cleanupAlloc([&v]() { GC_free(v); });
 
-	try {
-		state.eval(state.parseExprFromString(std::string(expr), ""), *v);
-	} catch (Error& e) {
-		res->success = 0;
-		res->result = NULL;
-		res->error = strdup(e.what());
-		return res;
-	}
+  try {
+    state.eval(state.parseExprFromString(std::string(expr), ""), *v);
+  } catch (Error &e) {
+    res->success = 0;
+    res->result = NULL;
+    res->error = strdup(e.what());
+    return res;
+  }
 
-	std::stringstream ss;
+  std::stringstream ss;
 
-	try {
-		printValueAsJSON(state, true, *v, ss, context);
-	} catch(Error& e) {
-		res->success = 0;
-		res->result = NULL;
-		res->error = strdup(e.what());
-		return res;
-	}
+  try {
+    printValueAsJSON(state, true, *v, ss, context);
+  } catch (Error &e) {
+    res->success = 0;
+    res->result = NULL;
+    res->error = strdup(e.what());
+    return res;
+  }
 
-	const std::string s = ss.str();
-	res->result = strdup(s.c_str());
-	res->success = 1;
+  const std::string s = ss.str();
+  res->result = strdup(s.c_str());
+  res->success = 1;
 
-	return res;
+  return res;
 }
 
-EvalResult* nixstorec_eval_file(struct nixstorec_instance* instp, const char* path) {
-	if (!is_valid_instance(instp)) {
-		fprintf(stderr, "Not a valid nixstorec instance.");
-		return NULL;
-	}
+EvalResult *nixstorec_eval_file(struct nixstorec_instance *instp,
+                                const char *path) {
+  if (!is_valid_instance(instp)) {
+    fprintf(stderr, "Not a valid nixstorec instance.");
+    return NULL;
+  }
 
-	if (path == NULL) {
-		fprintf(stderr, "Not a valid path.");
-		return NULL;
-	}
+  if (path == NULL) {
+    fprintf(stderr, "Not a valid path.");
+    return NULL;
+  }
 
-	EvalResult* res = mallocz<EvalResult>();
-	if (res == NULL) {
-		fprintf(stderr, "Failed to alloc memory for EvalResult");
-		return NULL;
-	}
+  EvalResult *res = mallocz<EvalResult>();
+  if (res == NULL) {
+    fprintf(stderr, "Failed to alloc memory for EvalResult");
+    return NULL;
+  }
 
-	PathSet context;
-	// FIXME: support custom search Paths
-	EvalState state({""}, ref<Store>(instp->store));
+  PathSet context;
+  // FIXME: support custom search Paths
+  EvalState state({""}, ref<Store>(instp->store));
 
-	auto v = state.allocValue(); // FIXME: Will this throw on OOM?
+  auto v = state.allocValue(); // FIXME: Will this throw on OOM?
 
-	try {
-		state.eval(state.parseExprFromFile(Path(path)), *v);
-	} catch (Error& e) {
-		res->success = 0;
-		res->result = NULL;
-		res->error = strdup(e.what());
-		return res;
-	}
+  try {
+    state.eval(state.parseExprFromFile(Path(path)), *v);
+  } catch (Error &e) {
+    res->success = 0;
+    res->result = NULL;
+    res->error = strdup(e.what());
+    return res;
+  }
 
-	std::stringstream ss;
+  std::stringstream ss;
 
-	try {
-		printValueAsJSON(state, true, *v, ss, context);
-	} catch(Error& e) {
-		res->success = 0;
-		res->result = NULL;
-		res->error = strdup(e.what());
-		return res;
-	}
+  try {
+    printValueAsJSON(state, true, *v, ss, context);
+  } catch (Error &e) {
+    res->success = 0;
+    res->result = NULL;
+    res->error = strdup(e.what());
+    return res;
+  }
 
-	const std::string s = ss.str();
-	res->result = strdup(s.c_str());
-	res->success = 1;
+  const std::string s = ss.str();
+  res->result = strdup(s.c_str());
+  res->success = 1;
 
-	return res;
+  return res;
 }
 
-const char* nixstorec_eval_result_get_error(EvalResult* r) {
-	if (r == NULL) return NULL;
-	if (r->success) return NULL;
-	return r->error;
+const char *nixstorec_eval_result_get_error(EvalResult *r) {
+  if (r == NULL)
+    return NULL;
+  if (r->success)
+    return NULL;
+  return r->error;
 }
 
-const char* nixstorec_eval_result_get_result(EvalResult* r) {
-	if (r == NULL) return NULL;
-	if (!r->success) return NULL;
-	return r->result;
+const char *nixstorec_eval_result_get_result(EvalResult *r) {
+  if (r == NULL)
+    return NULL;
+  if (!r->success)
+    return NULL;
+  return r->result;
 }
 
-int nixstorec_eval_result_get_success(EvalResult* r) {
-	if (r == NULL) return -1;
-	return r->success;
+int nixstorec_eval_result_get_success(EvalResult *r) {
+  if (r == NULL)
+    return -1;
+  return r->success;
 }
