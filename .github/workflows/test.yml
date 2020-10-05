@@ -17,3 +17,11 @@ jobs:
         signingKey: '${{ secrets.CACHIX_SIGNING_KEY }}'
     - run: nix-build release.nix -A test
     - run: ./result/bin/test
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v1
+    - uses: DoozyX/clang-format-lint-action@v0.10
+      with:
+        source: '.'
+        extensions: 'h,c,cpp,hpp'
