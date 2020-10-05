@@ -54,7 +54,7 @@ int main(int argc, char* argv[]) {
 	}
 
 	{
-		const char* abspath= realpath("./test.nix", NULL);
+		char* abspath= realpath("./test.nix", NULL);
 		if (abspath == NULL) {
 			perror("Failed to realpath");
 		} else {
