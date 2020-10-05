@@ -38,37 +38,25 @@ inline int is_valid_instance(struct nixstorec_instance* p) {
   return 1;
 }
 
-static pthread_mutex_t config_init_mutex;
+static pthread_once_t nix_setup = PTHREAD_ONCE_INIT;
+static bool nix_setup_successful = false;
 
-__attribute__((constructor)) void nixstore_load(void) {
-  pthread_mutex_init(&config_init_mutex, NULL);
-}
-
-__attribute__((destructor)) void nixstore_unload(void) {
-  pthread_mutex_destroy(&config_init_mutex);
+void setup_nix() {
+  initGC();
+  try {
+    loadConfFile();
+    settings.lockCPU = false;
+    nix_setup_successful = true;
+  } catch (Error& e) {
+    fprintf(stderr, "%s\n", e.what());
+  }
 }
 
 struct nixstorec_instance* nixstorec_new_instance() {
-  static int config_loaded = 0;
-
-  pthread_mutex_lock(&config_init_mutex);
-
-  initGC();
-
-  if (!config_loaded) {
-    // FIXME: mutex
-    try {
-      loadConfFile();
-      settings.lockCPU = false;
-    } catch (Error& e) {
-      fprintf(stderr, "%s\n", e.what());
-      pthread_mutex_unlock(&config_init_mutex);
-      return NULL;
-    }
-    config_loaded = 1;
+  (void) pthread_once(&nix_setup, setup_nix);
+  if (!nix_setup_successful) {
+    return NULL;
   }
-
-  pthread_mutex_unlock(&config_init_mutex);
 
   struct nixstorec_instance* p = mallocz<struct nixstorec_instance>();
 
